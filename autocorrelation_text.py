@@ -37,7 +37,7 @@ def autocorrelation_text(t,v,step_size = 1,block_n = 50,block_time = None,para =
 			block_index.append(one_block_index)
 			para_t = np.mean(t[one_block_index])
 			para_n = np.mean(v[one_block_index])
-			para_n_std = np.std(v[one_block_index])
+			para_n_std = np.var(v[one_block_index])  #方差
 			block_para.append([para_t,para_n,para_n_std])
 		else:
 
