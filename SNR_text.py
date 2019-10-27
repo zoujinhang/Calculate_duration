@@ -3,7 +3,7 @@
 from .autocorrelation_text import *
 from .background_kernel import WhittakerSmooth
 
-def SNR_text(t,v,criterion = 1,step_size = 1,block_n = 50,block_time = None):
+def SNR_text(t,v,criterion = 1,step_size = 1,block_n = 50,block_time = None,SNR = True):
 
 	t = np.array(t)
 	v = np.array(v)
@@ -15,8 +15,12 @@ def SNR_text(t,v,criterion = 1,step_size = 1,block_n = 50,block_time = None):
 	bs = WhittakerSmooth(v,w,lambda_= 200)
 	cs = v - bs
 	sigma = cs[background_index].std()
-	index = np.where((cs > criterion*sigma)&(nornallization >=  1))[0]
-	good_background_index = np.where((cs <= criterion*sigma) | (nornallization < 1))[0]
+	if(SNR):
+		index = np.where((cs > criterion*sigma)&(nornallization >=  1))[0]
+		good_background_index = np.where((cs <= criterion*sigma) | (nornallization < 1))[0]
+	else:
+		index = np.where(nornallization >= 1)[0]
+		good_background_index = np.where(nornallization < 1)[0]
 	nsi = (cs/sigma)
 	result = {'nsi':nsi,'sigma':sigma,'background_index':background_index,
 		  'good_index':piecemeal(index),'bs':bs,'cs':cs,'good_background_index':good_background_index}
