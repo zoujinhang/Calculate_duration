@@ -7,7 +7,7 @@ import numpy as np
 robjects.r("library(baseline)")
 robjects.numpy2ri.activate()
 
-def r_baseline(dt,rate,lam = None,hwi = None,it = None,inti = None):
+def r_baseline(rate,dt,lam = None,hwi = None,it = None,inti = None):
 	r.assign('rrate',rate)
 	r('y = matrix(rrate,nrow = 1)')
 

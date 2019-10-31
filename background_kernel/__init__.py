@@ -12,18 +12,25 @@ from .r_baseline import r_baseline
 
 class Baseline_in_time(object):
 
-	def __init__(self,time,value,fitness = 'double',hardness = False):
+	def __init__(self,time,value,fitness = 'double',hardness = False,time_unified = True):
 		self.time = time
 		self.value = value
+
+
 		self.t_transform = Time_transform(time,value)
 		self.unified_time,self.unified_value = self.t_transform.to_unified_time()
-		self.AirPLS = AirPLS(self.unified_value,hardness = hardness)
-
+		if time_unified:
+			self.AirPLS = AirPLS(self.unified_value,hardness = hardness)
+		else:
+			self.AirPLS = AirPLS(self.value, hardness=hardness)
 		cc = {'double':self.AirPLS.double_airPLS(),'bottom':self.AirPLS.bottom_airPLS(),
-		      'bottom_r':self.AirPLS.bottom_r(dt = 1)}
+			      'bottom_r':self.AirPLS.bottom_r(dt = 1)}
 
 		self.unified_bs = cc[fitness]
-		self.bs = self.t_transform.to_actual_time(self.unified_time,self.unified_bs)[1]
+		if time_unified:
+			self.bs = self.t_transform.to_actual_time(self.unified_time,self.unified_bs)[1]
+		else:
+			self.bs = self.unified_bs
 		self.cs = self.value-self.bs
 
 	def get_value(self):

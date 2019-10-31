@@ -4,7 +4,8 @@ from astropy.stats import bayesian_blocks
 
 
 def get_txx(t,binsize = 0.5,criterion = 1,step_size = 1,block_n = 50,block_time = None,txx = 0.05,it = 1000,
-	    bayesian = True,SNR =True):
+	    bayesian = True,SNR =True,
+	    time_unified = True):
 	'''
 
 	:param t:
@@ -30,21 +31,23 @@ def get_txx(t,binsize = 0.5,criterion = 1,step_size = 1,block_n = 50,block_time 
 
 	SNR_result = SNR_text(t_c,rate,criterion=criterion,step_size = step_size,
 			      block_n = block_n,block_time = block_time,
-			      SNR = SNR)
+			      SNR = False,time_unified=time_unified)
 	bs = SNR_result['bs']
 	good_index = SNR_result['good_index']
-
+	pp = SNR_result['nornallization']
 	#贝叶斯
 	time_edges = []
 	max_SNR_list = []
 	by_edges_list = []
 	by_rate_list = []
 	w = np.ones(len(rate))
+	print(len(good_index))
 	for one_index in good_index:
-
+		#print('one_index:',one_index)
 		t_c_in_one = t_c[one_index]
-		t_in_one_start = t_c_in_one[0]-5
-		t_in_one_stop = t_c_in_one[-1]+5
+		t_in_one_start = t_c_in_one[0]-10*binsize
+		t_in_one_stop = t_c_in_one[-1]+10*binsize
+		print('range:',t_in_one_stop-t_in_one_start)
 		if bayesian:
 			t_in_one = t[np.where((t>=t_in_one_start)&(t<=t_in_one_stop))[0]]
 
@@ -55,13 +58,16 @@ def get_txx(t,binsize = 0.5,criterion = 1,step_size = 1,block_n = 50,block_time 
 				t_b_index = np.where((t_c>=t_in_one_start)&(t_c<=t_in_one_stop))[0]
 				t_b = t_c[t_b_index]
 				bin_n_b = bin_n[t_b_index]
-				edges = bayesian_blocks(t_b,bin_n_b,fitness = 'events')
+				#print(t_b)
+				edges = bayesian_blocks(t_b,bin_n_b,fitness = 'events',gamma = np.exp(-10))
 
 			if len(edges > 3):#大于3才是有东西
 
-				bs_in_one = bs[np.where((t_c>=t_in_one_start+5)&(t_c<=t_in_one_stop-5))[0]]
-				w[np.where((t_c>=t_in_one_start+5)&(t_c<=t_in_one_stop-5))[0]] = 0
-				bs_mean = np.mean(bs_in_one)
+				bs_in_one = bs[np.where((t_c>=edges[0])&(t_c<=edges[-1]))[0]]
+				t_c_in_one1 = t_c[np.where((t_c>=edges[0])&(t_c<=edges[-1]))[0]]
+				bs_mean = bined_hist(t_c_in_one1,bs_in_one,bins = edges)
+
+				#bs_mean = np.mean(bs_in_one)
 
 				bin_n_by ,bin_b_edges = np.histogram(t_in_one,bins = edges)
 
@@ -69,21 +75,35 @@ def get_txx(t,binsize = 0.5,criterion = 1,step_size = 1,block_n = 50,block_time 
 
 				bin_b_rate = bin_n_by/bin_b_size
 				bin_b_rate = np.concatenate((bin_b_rate[:1],bin_b_rate))
-
-				max_SNR = (np.max(bin_b_rate)-bs_mean)/SNR_result['sigma']
+				bs_mean = np.concatenate((bs_mean[:1],bs_mean))
+				SNR_block = ((bin_b_rate-bs_mean)/SNR_result['sigma'])[1:-1]
+				max_SNR = np.max(SNR_block)
+				print(SNR_block)
 				if SNR :
 
 					if max_SNR >1:#说明有信噪比够好
-						time_edges.append([edges[1], edges[-2]])
+						print(one_index)
+						index_g0 = np.where(SNR_block > 0.5)[0]
+						index_g0 = np.concatenate(([index_g0[0] - 1], index_g0))+1
+						w[np.where((t_c >= edges[index_g0[0]] - 5 * binsize) &
+							   (t_c <= edges[index_g0[-1]] + 5 * binsize))[0]] = 0
+						time_edges.append([edges[index_g0[0]], edges[index_g0[-1]]])
 						max_SNR_list.append(max_SNR)
-						by_edges_list.append(bin_b_edges)
-						by_rate_list.append(bin_b_rate)
+						by_edges_list.append(bin_b_edges[1:-1])
+						by_rate_list.append(bin_b_rate[1:-1])
 				else:
-					time_edges.append([edges[1], edges[-2]])
+
+					index_g0 = np.where(SNR_block>0.5)[0]
+					index_g0 = np.concatenate(([index_g0[0]-1],index_g0))+1
+					w[np.where((t_c >=  edges[index_g0[0]] -5 * binsize) &
+						   (t_c <= edges[index_g0[-1]] +5 * binsize))[0]] = 0
+					time_edges.append([edges[index_g0[0]], edges[index_g0[-1]]])
 					max_SNR_list.append(max_SNR)
-					by_edges_list.append(bin_b_edges)
-					by_rate_list.append(bin_b_rate)
+					by_edges_list.append(bin_b_edges[1:-1])
+					by_rate_list.append(bin_b_rate[1:-1])
 		else:
+			w[np.where((t_c >= t_in_one_start + 10 * binsize) & (t_c <= t_in_one_stop - 10 * binsize))[
+				0]] = 0
 			time_edges.append([t_c_in_one[0],t_c_in_one[-1]])
 	time_start = time_edges[0][0]
 	time_stop = time_edges[-1][-1]
@@ -91,11 +111,25 @@ def get_txx(t,binsize = 0.5,criterion = 1,step_size = 1,block_n = 50,block_time 
 	result['time_edges'] = time_edges
 	result['t_c'] = t_c
 	result['rate'] = rate
+	result['nornallization'] = pp
 	if bayesian:
 		result['bayesian_edges'] = by_edges_list
 		result['bayesian_rate'] = by_rate_list
 
 	return result
+def bined_hist(t,v,bins):
+	t = np.array(t)
+	v = np.array(v)
+	re = []
+	bin_start = bins[:-1]
+	bin_stop = bins[1:]
+	n = len(bin_start)
+	for i in range(n):
+
+		vin = v[np.where((t>=bin_start[i])&(t<=bin_stop[i]))[0]]
+		aa = np.mean(vin)
+		re.append(aa)
+	return np.array(re)
 
 
 def accumulate_counts(t,n,n_err,sigma,w,t_start,t_stop,txx = 0.05,it = 1000):
@@ -131,7 +165,7 @@ def accumulate_counts(t,n,n_err,sigma,w,t_start,t_stop,txx = 0.05,it = 1000):
 	cs1_fit_max = np.mean(cs_f[np.where(t>t_stop)[0]])
 	if cs1_fit_max < ns:
 		return {'good':False}
-	dd = txx*cs_ff
+	dd = txx*cs1_fit_max
 	l1 = dd
 	l2 = cs1_fit_max - dd
 	t90, t1, t2 = found_txx(t_l, cs_ff, l1, l2)
@@ -162,7 +196,7 @@ def accumulate_counts(t,n,n_err,sigma,w,t_start,t_stop,txx = 0.05,it = 1000):
 			#cs_ff1 = np.interp(t_l,t, cs11_fit)
 			cs11_fit_max = np.mean(cs11_f[np.where(t>t_stop)[0]])
 			if cs11_fit_max >= ns:
-				dd = 0.05 * cs11_fit_max
+				dd = txx * cs11_fit_max
 				# plt.plot(bin_t, cs11_fit, color='r',alpha=0.1)
 				l11 = dd
 				l21 = cs1_fit_max - dd
