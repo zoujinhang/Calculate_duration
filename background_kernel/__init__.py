@@ -23,7 +23,7 @@ class Baseline_in_time(object):
 			self.AirPLS = AirPLS(self.unified_value,hardness = hardness)
 		else:
 			self.AirPLS = AirPLS(self.value, hardness=hardness)
-		cc = {'double':self.AirPLS.double_airPLS(),'bottom':self.AirPLS.bottom_airPLS(),
+		cc = {#'double':self.AirPLS.double_airPLS(),'bottom':self.AirPLS.bottom_airPLS(),
 			      'bottom_r':self.AirPLS.bottom_r(dt = 1)}
 
 		self.unified_bs = cc[fitness]

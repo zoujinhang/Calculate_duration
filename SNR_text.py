@@ -4,7 +4,7 @@ from .autocorrelation_text import *
 from .background_kernel import WhittakerSmooth
 
 def SNR_text(t,v,criterion = 1,step_size = 1,block_n = 50,
-	     block_time = None,SNR = True,time_unified = True):
+	     block_time = None,SNR = True,time_unified = True,lambda_ = 200):
 
 	t = np.array(t)
 	v = np.array(v)
@@ -16,7 +16,7 @@ def SNR_text(t,v,criterion = 1,step_size = 1,block_n = 50,
 
 	w = np.zeros(v.size)
 	w[background_index] = 1
-	bs = WhittakerSmooth(v,w,lambda_= 200)
+	bs = WhittakerSmooth(v,w,lambda_= lambda_)
 	cs = v - bs
 	sigma = cs[background_index].std()
 	if(SNR):

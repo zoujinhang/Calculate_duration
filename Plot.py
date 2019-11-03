@@ -14,10 +14,11 @@ class Plot(object):
 	def plot_light_curve(self,**k):
 		t = self.result['t_c']
 		rate = self.result['rate']
+		sigma = self.result['sigma']
 		bs = self.result['bs']
-
 		plt.plot(t,rate,color = 'b',label = 'light curve',**k)
 		plt.plot(t,bs,color = 'r',label = 'background',**k)
+		plt.plot(t,bs+sigma,color = 'y',label = 'sigma',**k)
 
 		try:
 			by_edges_list = self.result['bayesian_edges']
@@ -25,9 +26,14 @@ class Plot(object):
 			for index in range(len(by_edges_list)):
 
 				plt.plot(by_edges_list[index],by_rate_list[index],linestyle = 'steps',
-					  color = 'k',label = 'bayesian block',**k)
+					  color = 'k',**k)
+			plt.plot(0,0,color = 'k',label = 'bayesian blocks')
 		except:
+			print('have none bayesian blocks')
 			pass
+		plt.legend()
+		plt.xlim([t[0],t[-1]])
+
 	def plot_Txx1(self,txx,**k):
 
 		if self.result['good']:
@@ -35,23 +41,28 @@ class Plot(object):
 			t = self.result['t']
 			dt = t[1] - t[0]
 			n = self.result['n']/dt
+			le = len(self.result['t1'])
 
-			plt.plot(t,n,color = 'b',label = 'light curve',**k)
-			plt.plot(t,self.result['bs']/dt,color = 'r',label = 'background',**k)
+			plt.plot(t,n,color = 'b',**k)
+			plt.plot(t,self.result['bs1']/dt,color = 'r',**k)
 
-			t1_label = r'${T_{'+txx+',1} = ' + str(np.round(self.result['t1'] * 1000) / 1000) + '^{+' + str(
-				np.round(self.result['t1_err'][0] * 1000) / 1000) + '}_{-' + str(
-				np.round(self.result['t1_err'][1] * 1000) / 1000) + '}s}$'
-			t2_label = r'${T_{'+txx+',2} = ' + str(np.round(self.result['t2']* 1000) / 1000) + '^{+' + str(
-				np.round(self.result['t2_err'][0] * 1000) / 1000) + '}_{-' + str(
-				np.round(self.result['t2_err'][1] * 1000) / 1000) + '}s}$'
+
 
 			for i in self.result['bs_list']:
-				plt.plot(t,i,color = 'r',alpha = 0.01)
-			plt.axvline(x = self.result['t1'],color = 'g',linestyle = '--')
-			plt.axvline(x = self.result['t2'],color = 'g',linestyle = '--')
-			plt.plot(0,0,',',color = 'g',label = t1_label)
-			plt.plot(0,0,',',color = 'g',label = t2_label)
+				plt.plot(t,i/dt,color = 'r',alpha = 0.01)
+			for index in range(le):
+				t1_label = r'${T^{'+str(index+1)+'}_{' + txx + ',1} = ' + str(
+					np.round(self.result['t1'][index] * 1000) / 1000) + '^{+' + str(
+					np.round(self.result['t1_err'][0][index] * 1000) / 1000) + '}_{-' + str(
+					np.round(self.result['t1_err'][1][index] * 1000) / 1000) + '}}$ s '
+				t2_label = r'${T^{'+str(index+1)+'}_{' + txx + ',2} = ' + str(
+					np.round(self.result['t2'][index] * 1000) / 1000) + '^{+' + str(
+					np.round(self.result['t2_err'][0][index] * 1000) / 1000) + '}_{-' + str(
+					np.round(self.result['t2_err'][1][index] * 1000) / 1000) + '}}$ s'
+				plt.axvline(x = self.result['t1'][index],color = 'g',linestyle = '--')
+				plt.axvline(x = self.result['t2'][index],color = 'g',linestyle = '--')
+				plt.plot(0,0,',',color = 'g',label = t1_label+t2_label)
+
 			plt.xlim([t[0],t[-1]])
 			plt.xlabel('time (s)',**k)
 			plt.ylabel('rate',**k)
@@ -62,20 +73,26 @@ class Plot(object):
 	def plot_Txx2(self,txx,**k):
 
 		if self.result['good']:
-
+			le = len(self.result['t1'])
 			t = self.result['t']
 			cs_f = self.result['cs_f']
 			cs_f_max = self.result['cs_f_max']
 			l = self.result['l']
-			plt.axhline(y = 0,color = 'b')
-			plt.axhline(y = cs_f_max,color = 'b')
-			plt.axhline(y = l[0],color = 'g',linestyle = '--')
-			plt.axhline(y = l[1],color = 'g',linestyle = '--')
+			for i in cs_f_max:
+				plt.axhline(y = i,color = 'b')
+			for i in l[0]:
+				plt.axhline(y = i,color = 'b',linestyle = '--')
+			for i in l[1]:
+				plt.axhline(y = i,color = 'b',linestyle = '--')
 			plt.plot(t,cs_f,color = 'k')
-			label1 = r'${T_{'+txx+'} = ' + str(np.round(self.result['txx'] * 1000) / 1000) + '^{+' + str(
-				np.round(self.result['txx_err'][0] * 1000) / 1000) + '}_{-' + str(
-				np.round(self.result['txx_err'][1] * 1000) / 1000) + '}s}$'
-			plt.plot(0,0,',',label = label1)
+			for index in range(le):
+				plt.axvline(x = self.result['t1'][index],color = 'g',linestyle = '--')
+				plt.axvline(x = self.result['t2'][index],color = 'g',linestyle = '--')
+
+				label1 = r'${T_{'+txx+'} = ' + str(np.round(self.result['txx'][index] * 1000) / 1000) + '^{+' + str(
+					np.round(self.result['txx_err'][0][index] * 1000) / 1000) + '}_{-' + str(
+					np.round(self.result['txx_err'][1][index] * 1000) / 1000) + '}}$ s'
+				plt.plot(0,0,',',label = label1)
 			plt.xlabel('time (s)',**k)
 			plt.ylabel('Accumulated counts',**k)
 			plt.xlim([t[0],t[-1]])
@@ -83,16 +100,19 @@ class Plot(object):
 		else:
 			print('T'+txx+' is not good!')
 
-	def plot_distribution(self,txx,**k):
+	def plot_distribution(self,txx,num = 0,**k):
 
 		if self.result['good']:
-			txx_list = self.result['txx_list']
-			t1_list = self.result['t1_list']
-			t2_list = self.result['t2_list']
+			txx_list = self.result['txx_list'][num]
+			t1_list = self.result['t1_list'][num]
+			t2_list = self.result['t2_list'][num]
 			t90_list_sort = np.sort(txx_list)
 			t90_err = np.std(txx_list)
+			t90_two = np.percentile(txx_list,[40,60])
 
-			t90_bin = np.linspace(t90_list_sort[0], t90_list_sort[-1], 100)
+			t90_binsize = t90_two[-1]-t90_two[0]
+			t90_bin = np.arange(t90_list_sort[0], t90_list_sort[-1]+t90_binsize,t90_binsize)
+			#t90_bin = np.linspace(t90_list_sort[0], t90_list_sort[-1], 100)
 			t90_n, t90_edges = np.histogram(txx_list, bins=t90_bin)
 			t90_n = np.concatenate((t90_n[:1], t90_n))
 			plt.subplot(1,3,1)
@@ -101,11 +121,14 @@ class Plot(object):
 			plt.axvline(x=txx_list.mean(), color='r')
 			plt.axvline(x=txx_list.mean() - t90_err, color='r')
 			plt.axvline(x=txx_list.mean() + t90_err, color='r')
-			plt.axvline(x=self.result['txx'], color='g')
+			plt.axvline(x=self.result['txx'][num], color='g')
 			plt.xlabel('T'+txx+' (s)',**k)
 
 			t1_list_sort = np.sort(t1_list)
-			t90_bin = np.linspace(t1_list_sort[0], t1_list_sort[-1], 100)
+			t90_two = np.percentile(t1_list, [40, 60])
+			t90_binsize = t90_two[-1] - t90_two[0]
+			t90_bin = np.arange(t1_list_sort[0], t1_list_sort[-1] + t90_binsize, t90_binsize)
+			#t90_bin = np.linspace(t1_list_sort[0], t1_list_sort[-1], 100)
 			t90_n, t90_edges = np.histogram(t1_list, bins=t90_bin)
 			t90_n = np.concatenate((t90_n[:1], t90_n))
 			t1_err = np.std(t1_list)
@@ -116,11 +139,14 @@ class Plot(object):
 			plt.axvline(x=t1_list.mean(), color='r')
 			plt.axvline(x=t1_list.mean() - t1_err, color='r')
 			plt.axvline(x=t1_list.mean() + t1_err, color='r')
-			plt.axvline(x=self.result['t1'], color='g')
+			plt.axvline(x=self.result['t1'][num], color='g')
 			plt.xlabel('T'+txx+'1 (s)')
 
-			t90_list_sort = np.sort(t2_list)
-			t90_bin = np.linspace(t90_list_sort[0], t90_list_sort[-1], 100)
+			t2_list_sort = np.sort(t2_list)
+			t90_two = np.percentile(t2_list, [40, 60])
+			t90_binsize = t90_two[-1] - t90_two[0]
+			t90_bin = np.arange(t2_list_sort[0], t2_list_sort[-1] + t90_binsize, t90_binsize)
+			#t90_bin = np.linspace(t90_list_sort[0], t90_list_sort[-1], 100)
 			t90_n, t90_edges = np.histogram(t2_list, bins=t90_bin)
 			t90_n = np.concatenate((t90_n[:1], t90_n))
 			t2_err = np.std(t2_list)
@@ -131,7 +157,7 @@ class Plot(object):
 			plt.axvline(x=t2_list.mean(), color='r')
 			plt.axvline(x=t2_list.mean() - t2_err, color='r')
 			plt.axvline(x=t2_list.mean() + t2_err, color='r')
-			plt.axvline(x=self.result['t2'], color='g')
+			plt.axvline(x=self.result['t2'][num], color='g')
 			plt.xlabel('T'+txx+'2 (s)')
 
 		else:

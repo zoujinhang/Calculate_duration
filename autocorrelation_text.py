@@ -33,6 +33,7 @@ def autocorrelation_text(t,v,step_size = 1,block_n = 50,block_time = None,para =
 			print('block_time should bigger than ',40*dt)
 		else:
 			block_n = int(block_time/dt)
+			print('block_n',block_n)
 	index_block = np.arange(0,int(block_n),1)
 
 	block_para = []
@@ -86,7 +87,7 @@ def autocorrelation_text(t,v,step_size = 1,block_n = 50,block_time = None,para =
 	new_pe = np.linspace(0, es, 1000)
 	new_pn = interp1d(pe_c, pn, kind='cubic')(new_pe)
 
-	threshold = new_pe[new_pn<np.max(new_pn)*0.4][0] #得到阈值
+	threshold = new_pe[new_pn<np.max(new_pn)*0.3][0] #得到阈值
 
 	#index_back_of_block = np.where(ACC_cs<=threshold)[0]
 	#index_signl_of_block = np.where(ACC_cs>threshold)[0]
