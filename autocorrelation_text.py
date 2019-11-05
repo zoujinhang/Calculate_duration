@@ -92,17 +92,17 @@ def autocorrelation_text(t,v,step_size = 1,block_n = 50,block_time = None,para =
 	#index_back_of_block = np.where(ACC_cs<=threshold)[0]
 	#index_signl_of_block = np.where(ACC_cs>threshold)[0]
 
-	nornallization = np.zeros(t.size)
+	normallization = np.zeros(t.size)
 	for index,value in enumerate(ACC_cs):
 
 		if(value > threshold):
 
-			nornallization[block_index[index]] = nornallization[block_index[index]] + 1
-	background_index = np.where(nornallization < block_n)[0]
+			normallization[block_index[index]] = normallization[block_index[index]] + 1
+	background_index = np.where(normallization < block_n)[0]
 
 	if para :
 
-		return background_index,nornallization/block_n,block_index,ACC_cs-threshold
+		return background_index,normallization/block_n,block_index,ACC_cs-threshold
 	else:
 		return background_index
 

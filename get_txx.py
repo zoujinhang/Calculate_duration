@@ -3,24 +3,26 @@ from .SNR_text import *
 from astropy.stats import bayesian_blocks
 
 
-def get_txx(t,binsize = 0.5,criterion = 1,step_size = 1,block_n = 50,block_time = None,txx = 0.9,it = 1000,
+def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = None,txx = 0.9,it = 1000,
 	    bayesian = True,SNR =True,
 	    time_unified = True,
 	    hardness = 100
 	    ):
 	'''
 
-	:param t:
-	:param binsize:
-	:param criterion:
-	:param step_size:
-	:param block_n:
-	:param block_time:
+	:param t: 光子的时间
+	:param binsize: 切片的大小
+	:param sigma: 信噪比判定标准
+	:param step_size: 浮动块移动步长
+	:param block_n: 浮动块大小
+	:param block_time: or 浮动块时长
 	:param txx:
-	:param it:
-	:param bayesian:
-	:param SNR:
-	:return:
+	:param it: MCMC 迭代次数
+	:param bayesian: bayesian 判定
+	:param SNR: 信噪比判定
+	:param time_unified: 背景时间标准化
+	:param hardness: 背景硬度
+	:return: 字典
 	'''
 	t = np.array(t)
 
@@ -31,12 +33,12 @@ def get_txx(t,binsize = 0.5,criterion = 1,step_size = 1,block_n = 50,block_time 
 	t_c = (bin_edges[1:]+bin_edges[:-1])*0.5
 	rate = bin_n/binsize
 
-	SNR_result = SNR_text(t_c,rate,criterion=criterion,step_size = step_size,
+	SNR_result = SNR_text(t_c,rate,step_size = step_size,
 			      block_n = block_n,block_time = block_time,
-			      SNR = False,time_unified=time_unified,lambda_= hardness)
+			      time_unified=time_unified,lambda_= hardness)
 	bs = SNR_result['bs']
 	good_index = SNR_result['good_index']
-	pp = SNR_result['nornallization']
+	pp = SNR_result['normallization']
 	#贝叶斯
 	time_edges = []
 	max_SNR_list = []
@@ -89,7 +91,7 @@ def get_txx(t,binsize = 0.5,criterion = 1,step_size = 1,block_n = 50,block_time 
 				print('max_SNR',max_SNR)
 				if SNR :
 
-					if max_SNR >1:#说明有信噪比够好
+					if max_SNR >sigma:#说明有信噪比够好
 						time_edges.append([t_start, t_stop])
 						max_SNR_list.append(max_SNR)
 						by_edges_list.append(bin_b_edges)
@@ -113,7 +115,7 @@ def get_txx(t,binsize = 0.5,criterion = 1,step_size = 1,block_n = 50,block_time 
 	result['time_edges'] = time_edges
 	result['t_c'] = t_c
 	result['rate'] = rate
-	result['nornallization'] = pp
+	result['normallization'] = pp
 	result['sigma'] = SNR_result['sigma']
 	result['bs'] = bs
 	if bayesian:
@@ -302,7 +304,7 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100)
 							pp = pp + 1
 
 			if pp > 0:
-				print(nnn)
+				print(nnn,end = '\r')
 				bs_list.append(bs11)
 				nnn = nnn + 1
 

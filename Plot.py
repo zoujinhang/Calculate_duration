@@ -163,10 +163,10 @@ class Plot(object):
 		else:
 			print('T' + txx + ' is not good!')
 
-	def plot_nornallization(self,**kwargs):
-		nornallization = self.result['nornallization']
+	def plot_normallization(self,**kwargs):
+		normallization = self.result['normallization']
 		t = self.result['t_c']
-		plt.plot(t,nornallization,**kwargs)
+		plt.plot(t,normallization,**kwargs)
 
 
 
