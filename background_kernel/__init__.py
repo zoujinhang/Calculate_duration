@@ -21,10 +21,14 @@ class Baseline_in_time(object):
 		self.unified_time,self.unified_value = self.t_transform.to_unified_time()
 		if time_unified:
 			self.AirPLS = AirPLS(self.unified_value,hardness = hardness)
+			dt = self.unified_time[1] - self.unified_time[0]
+			print('dt',dt)
 		else:
 			self.AirPLS = AirPLS(self.value, hardness=hardness)
+			dt = self.time[1]-self.time[0]
+			print('dt',dt)
 		cc = {#'double':self.AirPLS.double_airPLS(),'bottom':self.AirPLS.bottom_airPLS(),
-			      'bottom_r':self.AirPLS.bottom_r(dt = 1)}
+			      'bottom_r':self.AirPLS.bottom_r(dt = dt)}
 
 		self.unified_bs = cc[fitness]
 		if time_unified:

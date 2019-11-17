@@ -7,6 +7,7 @@ def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = No
 	    bayesian = True,SNR =True,
 	    time_unified = True,
 	    hardness = 100
+
 	    ):
 	'''
 
@@ -64,8 +65,8 @@ def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = No
 				bin_n_b = bin_n[t_b_index]
 				#print(t_b)
 				edges = bayesian_blocks(t_b,bin_n_b,fitness = 'events',gamma = np.exp(-12))
-
-			if len(edges > 3):#大于3才是有东西
+			print('edges: ',edges)
+			if len(edges) > 3:#大于3才是有东西
 				edges_c = (edges[1:] + edges[:-1]) * 0.5
 
 
@@ -87,18 +88,22 @@ def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = No
 
 				SNR_block = ((bin_b_rate-bs_mean)/SNR_result['sigma'])
 				bin_b_rate = np.concatenate((bin_b_rate[:1], bin_b_rate))
-				max_SNR = np.max(SNR_block)
+				max_SNR = np.max(SNR_block[1:-1])
 				print('max_SNR',max_SNR)
 				if SNR :
 
-					if max_SNR >sigma:#说明有信噪比够好
+					if max_SNR > sigma:#说明有信噪比够好
+						print('max_good')
 						time_edges.append([t_start, t_stop])
 						max_SNR_list.append(max_SNR)
 						by_edges_list.append(bin_b_edges)
 						by_rate_list.append(bin_b_rate)
 					else:#信号太弱，忽略脉冲
+						print('max_not_good')
 						w[np.where((t_c >= t_start) & (t_c <= t_stop))[0]] = 1
+
 						bs = WhittakerSmooth(rate, w, lambda_=hardness)
+
 				else:
 					time_edges.append([t_start, t_stop])
 					max_SNR_list.append(max_SNR)
@@ -108,10 +113,26 @@ def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = No
 			w[np.where((t_c >= t_in_one_start ) & (t_c <= t_in_one_stop ))[
 				0]] = 0
 			time_edges.append([t_c_in_one[0],t_c_in_one[-1]])
+	if(len(time_edges) == 0):
+		print('we do not find a pulse !')
+		result = {'good':False,
+			't_c':t_c,
+			'rate':rate,
+			'bs':bs,
+			'normallization':pp,
+			'sigma':SNR_result['sigma']}
+		if bayesian:
+			print('have bayesian blocks.')
+			result['bayesian_edges'] = by_edges_list
+			result['bayesian_rate'] = by_rate_list
+		return result
 	time_edges = np.array(time_edges).T
+	
 	time_start = time_edges[0]
 	time_stop = time_edges[1]
+	print('accumulate')
 	result = accumulate_counts(t_c,bin_n,np.sqrt(bin_n),w,time_start,time_stop,txx =txx,it = it,lamd=hardness)
+	print('accumulate over')
 	result['time_edges'] = time_edges
 	result['t_c'] = t_c
 	result['rate'] = rate
@@ -143,10 +164,14 @@ def bined_hist(t,v,bins):
 	return np.array(re)
 
 def found_edges(edges,v):
+	if len(edges) == 4:
+		return 0.5*(edges[0]+edges[1]),0.5*(edges[2]+edges[3])
 	edges  =  np.array(edges)
 	v = np.array(v)
 	edges_start = edges[:-1]
 	edges_stop = edges[1:]
+	edges_size = edges_stop - edges_start
+	size_sort = np.sort(edges_size)[-2:]  #尺寸最大的块
 	start_time = edges_start[0]
 	stop_time = edges_stop[-1]
 	trait = []
@@ -156,14 +181,17 @@ def found_edges(edges,v):
 	for i in range(len(v)):
 		if (i == 0):
 
-			if(v[i] < v[i+1]):
+			if(v[i] < v[i+1])and(edges_size[i] in size_sort):
 				trait.append(cafe)
 			else:
 				trait.append(fringe)
-
+				v[i] = v[i+1]+1
+			if(v[len(v)-1] <= v[len(v)-2])and(edges_size[len(v)-1] not in size_sort):
+				v[len(v)-1] = v[len(v)-2]+1
+				
 		elif(i == len(v)-1):
 
-			if(v[i] < v[i-1] ):
+			if(v[i] < v[i-1])and(edges_size[i] in size_sort):
 				trait.append(cafe)
 			else:
 				trait.append(fringe)
@@ -212,9 +240,14 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100)
 	cs_fit = WhittakerSmooth(cs_f, w1, 1)
 	#durti = t_stop-t_start
 	ns = 3*sigma#*durti
+	duration = t_stop - t_start
+	index_sort = np.argsort(duration)[0]
 
-	if len(t)<1000:#这里是为了提高精度
-		t_l = np.linspace(t[0], t[-1], 1000)
+
+	if len(np.where((t>=t_start[index_sort]) & (t<= t_stop[index_sort]))[0])<1000:#这里是为了提高精度
+		d_t = (t_stop[index_sort]-t_start[index_sort])/1000
+		print('dt for interp:',d_t)
+		t_l = np.arange(t[0], t[-1]+d_t, d_t)
 		cs_ff = np.interp(t_l, t, cs_fit)
 	else:
 		t_l = t
@@ -241,7 +274,7 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100)
 			dd = txx * dcsf
 			l1i = dd + csf_fit_list[index]
 			l2i = csf_fit_list[index+1] - dd
-			t90i, t1i, t2i = found_txx(t_l, cs_ff, l1i, l2i)
+			t90i, t1i, t2i = found_txx(t_l, cs_ff, l1i, l2i,csf_fit_list[index+1])
 			t90.append(t90i)
 			t1.append(t1i)
 			t2.append(t2i)
@@ -258,21 +291,20 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100)
 	bs_list = []
 	index_list = []
 	nnn = 0
+
 	while nnn < it:
 		try:
-
+			
 			bin_ratexx = n + n_err * np.random.randn(len(n_err))
 			bs11 = WhittakerSmooth(bin_ratexx, w, lamd)
 
 			cs11 = bin_ratexx - bs11
 			cs11_f = np.cumsum(cs11)
 			cs11_fit = WhittakerSmooth(cs11_f, w1, 1)
-			if len(t) < 1000:
-				t_l = np.linspace(t[0], t[-1], 1000)
-				cs_ff1 = np.interp(t_l, t, cs11_fit)
-			else:
-				t_l = t
-				cs_ff1 = cs_fit
+
+
+			cs_ff1 = np.interp(t_l, t, cs11_fit)
+
 			csf_fit_list1 = [0]
 
 			for i in range(part_n):
@@ -288,14 +320,35 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100)
 			pp = 0
 			for index, dcsf in enumerate(dcsf_fit_list1):
 				if index in index_i:
-
+					
 					if dcsf > ns:
 
+						#print(dcsf,ns)
 						dd = txx * dcsf
 						l11 = dd + csf_fit_list1[index]
 						l21 = csf_fit_list1[index + 1] - dd
-						t90i, t1i, t2i = found_txx(t_l, cs_ff1, l11, l21)
-						if ((t1i < t_start[index]+3*t90[index] and t1i > t_start[index]-3*t90[index]) and (t2i > t_stop[index]-3*t90[index] and t2i<t_stop[index]+3*t90[index])):
+						t90i, t1i, t2i = found_txx(t_l, cs_ff1, l11, l21,csf_fit_list1[index + 1])
+						if 3*t90[index]>10:
+							bb = 3*t90[index]
+						else:
+							bb = 10
+						t1_range1 = t_start[index]-bb
+						t1_range2 = t_start[index]+bb
+						t2_range1 = t_stop[index]-bb
+						t2_range2 = t_stop[index]+bb
+						
+						if index <len(t_start)-1:
+							if t1_range2>t_start[index+1]:
+								t1_range2 = t_start[index+1]
+							if t2_range2>t_start[index+1]:
+								t2_range2 = t_start[index+1]
+						if(index>0):
+							if t1_range1<t_stop[index-1]:
+								t1_range1 = t_stop[index-1]
+							if t2_range1<t_stop[index-1]:
+								t2_range1 = t_stop[index-1]
+						#print(t1_range1,t1_range2,t2_range1,t2_range2)
+						if ((t1i < t1_range2 and t1i > t1_range1) and (t2i > t2_range1 and t2i<t2_range2)):
 
 							t90_list.append(t90i)
 							t1_list.append(t1i)
@@ -362,13 +415,15 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100)
 
 
 
-def found_txx(t,v,st1,st2):
+def found_txx(t,v,st1,st2,base2):
 	t1 = []
 	for i in range(len(t)):
 		if v[i] >= st1:
 			if v[i] >= st2:
-				break
-			t1.append(t[i])
+				if v[i]>base2:
+					break
+			else:
+				t1.append(t[i])
 
 		else:
 			t1 = []

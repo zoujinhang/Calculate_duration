@@ -111,7 +111,10 @@ class Plot(object):
 			t90_two = np.percentile(txx_list,[40,60])
 
 			t90_binsize = t90_two[-1]-t90_two[0]
-			t90_bin = np.arange(t90_list_sort[0], t90_list_sort[-1]+t90_binsize,t90_binsize)
+			if t90_binsize >0:
+				t90_bin = np.arange(t90_list_sort[0], t90_list_sort[-1]+t90_binsize,t90_binsize)
+			else:
+				t90_bin = np.linspace(t90_list_sort[0], t90_list_sort[-1],20)
 			#t90_bin = np.linspace(t90_list_sort[0], t90_list_sort[-1], 100)
 			t90_n, t90_edges = np.histogram(txx_list, bins=t90_bin)
 			t90_n = np.concatenate((t90_n[:1], t90_n))
@@ -125,9 +128,12 @@ class Plot(object):
 			plt.xlabel('T'+txx+' (s)',**k)
 
 			t1_list_sort = np.sort(t1_list)
-			t90_two = np.percentile(t1_list, [40, 60])
+			t90_two = np.percentile(t1_list_sort, [40, 60])
 			t90_binsize = t90_two[-1] - t90_two[0]
-			t90_bin = np.arange(t1_list_sort[0], t1_list_sort[-1] + t90_binsize, t90_binsize)
+			if t90_binsize > 0:
+				t90_bin = np.arange(t1_list_sort[0], t1_list_sort[-1] + t90_binsize, t90_binsize)
+			else:
+				t90_bin = np.linspace(t1_list_sort[0], t1_list_sort[-1],20)
 			#t90_bin = np.linspace(t1_list_sort[0], t1_list_sort[-1], 100)
 			t90_n, t90_edges = np.histogram(t1_list, bins=t90_bin)
 			t90_n = np.concatenate((t90_n[:1], t90_n))
@@ -145,8 +151,11 @@ class Plot(object):
 			t2_list_sort = np.sort(t2_list)
 			t90_two = np.percentile(t2_list, [40, 60])
 			t90_binsize = t90_two[-1] - t90_two[0]
-			t90_bin = np.arange(t2_list_sort[0], t2_list_sort[-1] + t90_binsize, t90_binsize)
-			#t90_bin = np.linspace(t90_list_sort[0], t90_list_sort[-1], 100)
+			if t90_binsize > 0:
+				t90_bin = np.arange(t2_list_sort[0], t2_list_sort[-1] + t90_binsize, t90_binsize)
+			else:
+				t90_bin = np.linspace(t2_list_sort[0], t2_list_sort[-1], 20)
+
 			t90_n, t90_edges = np.histogram(t2_list, bins=t90_bin)
 			t90_n = np.concatenate((t90_n[:1], t90_n))
 			t2_err = np.std(t2_list)

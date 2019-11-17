@@ -20,8 +20,8 @@ def SNR_text(t,v,step_size = 1,block_n = 50,
 	cs = v - bs
 	sigma = cs[background_index].std()
 
-	index = np.where(nornallization >= 1)[0]
-	good_background_index = np.where(nornallization < 1)[0]
+	index = np.where(nornallization >= 0.99)[0]
+	good_background_index = np.where(nornallization < 0.99)[0]
 	#print('good_index:',index)
 	nsi = (cs/sigma)
 	result = {'nsi':nsi,'sigma':sigma,'background_index':background_index,

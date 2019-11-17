@@ -45,19 +45,16 @@ def autocorrelation_text(t,v,step_size = 1,block_n = 50,block_time = None,para =
 		if(index_block[-1]+step_size*i<t.size):
 
 			one_block_index = index_block + step_size*i
-			block_index.append(one_block_index)
-			para_t = np.mean(t[one_block_index])
-			para_n = np.mean(v[one_block_index])
-			para_n_std = np.var(v[one_block_index])  #方差
-			block_para.append([para_t,para_n,para_n_std])
 		else:
 
 			one_block_index = -1-index_block
-			block_index.append(one_block_index)
-			para_t = np.mean(t[one_block_index])
-			para_n = np.mean(v[one_block_index])
-			para_n_std = np.std(v[one_block_index])
-			block_para.append([para_t, para_n, para_n_std])
+		block_index.append(one_block_index)
+		para_t = np.mean(t[one_block_index])
+		para_n = np.mean(v[one_block_index])
+		para_n_std = np.var(v[one_block_index])  #方差
+		block_para.append([para_t,para_n,para_n_std])
+		
+			
 
 	block_para = np.array(block_para).T
 
@@ -98,6 +95,7 @@ def autocorrelation_text(t,v,step_size = 1,block_n = 50,block_time = None,para =
 		if(value > threshold):
 
 			normallization[block_index[index]] = normallization[block_index[index]] + 1
+	#print('normal:\n',list(normallization))
 	background_index = np.where(normallization < block_n)[0]
 
 	if para :
