@@ -61,7 +61,7 @@ def autocorrelation_text(t,v,step_size = 1,block_n = 50,block_time = None,para =
 	ACC =  block_para[1]*block_para[2]/np.sqrt((block_para[1]**2).sum()*(block_para[2]**2).sum())
 
 	#ACC的背景处理。
-	ACC_bf = Baseline_in_time(block_para[0],ACC,fitness = 'bottom_r',time_unified=time_unified)
+	ACC_bf = Baseline_in_time(block_para[0],ACC,case = 'TD',time_unified=time_unified)
 	#ACC_bf = AirPLS(ACC)
 	ACC_cs = ACC - ACC_bf.bs
 	#ACC_cs = ACC_cs - AirPLS(ACC_cs).bottom_airPLS()
@@ -84,7 +84,7 @@ def autocorrelation_text(t,v,step_size = 1,block_n = 50,block_time = None,para =
 	new_pe = np.linspace(0, es, 1000)
 	new_pn = interp1d(pe_c, pn, kind='cubic')(new_pe)
 
-	threshold = new_pe[new_pn<np.max(new_pn)*0.3][0] #得到阈值
+	threshold = new_pe[new_pn<np.max(new_pn)*0.25][0] #得到阈值
 
 	#index_back_of_block = np.where(ACC_cs<=threshold)[0]
 	#index_signl_of_block = np.where(ACC_cs>threshold)[0]
@@ -100,7 +100,7 @@ def autocorrelation_text(t,v,step_size = 1,block_n = 50,block_time = None,para =
 
 	if para :
 
-		return background_index,normallization/block_n,block_index,ACC_cs-threshold
+		return background_index,normallization/block_n,block_index,ACC_cs-threshold,block_para[0]
 	else:
 		return background_index
 

@@ -178,6 +178,11 @@ class Plot(object):
 		plt.plot(t,normallization,**kwargs)
 
 
+	def plot_ACC(self,**kwargs):
+
+		ACCT = self.result['ACCT']
+		ACC = self.result['ACC']
+		plt.plot(ACCT,ACC)
 
 
 
