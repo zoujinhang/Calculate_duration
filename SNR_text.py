@@ -13,11 +13,11 @@ def SNR_text(t,v,step_size = 1,block_n = 50,
 									       block_n = block_n,
 									       block_time = block_time,para = True,
 									       time_unified=time_unified)
-	w = 1-nornallization
-	#w[background_index] = 1
+	w = np.zeros(v.size)
+	w[background_index] = 1
 	bs = WhittakerSmooth(v,w,lambda_= lambda_)
 	cs = v - bs
-	sigma = cs[w>0.5].std()
+	sigma = cs[background_index].std()
 
 	index = np.where(nornallization >= 0.95)[0]
 	good_background_index = np.where(nornallization < 0.95)[0]

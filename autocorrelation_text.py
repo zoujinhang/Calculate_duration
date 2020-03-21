@@ -61,7 +61,7 @@ def autocorrelation_text(t,v,step_size = 1,block_n = 50,block_time = None,para =
 	ACC =  block_para[1]*block_para[2]/np.sqrt((block_para[1]**2).sum()*(block_para[2]**2).sum())
 
 	#ACC的背景处理。
-	ACC_bf = Baseline_in_time(block_para[0],ACC,case = 'TD',time_unified=time_unified)
+	ACC_bf = Baseline_in_time(block_para[0],ACC,case = 'FD',time_unified=time_unified)
 	#ACC_bf = AirPLS(ACC)
 	ACC_cs = ACC - ACC_bf.bs
 	#ACC_cs = ACC_cs - AirPLS(ACC_cs).bottom_airPLS()

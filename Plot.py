@@ -9,8 +9,7 @@ class Plot(object):
 	def __init__(self,result):
 
 		self.result = result
-
-
+	
 	def plot_light_curve(self,**k):
 		t = self.result['t_c']
 		rate = self.result['rate']
@@ -25,8 +24,7 @@ class Plot(object):
 			by_rate_list = self.result['bayesian_rate']
 			for index in range(len(by_edges_list)):
 
-				plt.plot(by_edges_list[index],by_rate_list[index],linestyle = 'steps',
-					  color = 'k',**k)
+				plt.step(by_edges_list[index],by_rate_list[index],color = 'k',**k)
 			plt.plot(0,0,color = 'k',label = 'bayesian blocks')
 		except:
 			print('have none bayesian blocks')
@@ -51,14 +49,11 @@ class Plot(object):
 			for i in self.result['bs_list']:
 				plt.plot(t,i/dt,color = 'r',alpha = 0.01)
 			for index in range(le):
-				t1_label = r'${T^{'+str(index+1)+'}_{' + txx + ',1} = ' + str(
-					np.round(self.result['t1'][index] * 1000) / 1000) + '^{+' + str(
-					np.round(self.result['t1_err'][0][index] * 1000) / 1000) + '}_{-' + str(
-					np.round(self.result['t1_err'][1][index] * 1000) / 1000) + '}}$ s '
-				t2_label = r'${T^{'+str(index+1)+'}_{' + txx + ',2} = ' + str(
-					np.round(self.result['t2'][index] * 1000) / 1000) + '^{+' + str(
-					np.round(self.result['t2_err'][0][index] * 1000) / 1000) + '}_{-' + str(
-					np.round(self.result['t2_err'][1][index] * 1000) / 1000) + '}}$ s'
+				t1_label = r'${T^{'+str(index+1)+'}_{'+txx+',1} = %.3f ^ {+ %.3f}_{-%.3f}}$ s '% \
+				           (self.result['t1'][index],self.result['t1_err'][1][index],self.result['t1_err'][0][index])
+				t2_label = r'${T^{'+str(index+1)+'}_{'+txx+',2} = %.3f ^ {+ %.3f}_{-%.3f}}$ s '% \
+				           (self.result['t2'][index],self.result['t2_err'][1][index],self.result['t2_err'][0][index])
+				
 				plt.axvline(x = self.result['t1'][index],color = 'g',linestyle = '--')
 				plt.axvline(x = self.result['t2'][index],color = 'g',linestyle = '--')
 				plt.plot(0,0,',',color = 'g',label = t1_label+t2_label)
@@ -88,10 +83,8 @@ class Plot(object):
 			for index in range(le):
 				plt.axvline(x = self.result['t1'][index],color = 'g',linestyle = '--')
 				plt.axvline(x = self.result['t2'][index],color = 'g',linestyle = '--')
-
-				label1 = r'${T_{'+txx+'} = ' + str(np.round(self.result['txx'][index] * 1000) / 1000) + '^{+' + str(
-					np.round(self.result['txx_err'][0][index] * 1000) / 1000) + '}_{-' + str(
-					np.round(self.result['txx_err'][1][index] * 1000) / 1000) + '}}$ s'
+				label1 = r'${T_{'+txx+'} = %.3f^{+ %.3f}_{-%.3f}}$ s '% \
+				         (self.result['txx'][index],self.result['txx_err'][1][index],self.result['txx_err'][0][index])
 				plt.plot(0,0,',',label = label1)
 			plt.xlabel('time (s)',**k)
 			plt.ylabel('Accumulated counts',**k)
@@ -120,7 +113,7 @@ class Plot(object):
 			t90_n = np.concatenate((t90_n[:1], t90_n))
 			plt.subplot(1,3,1)
 			plt.title('T'+txx+' distribution',**k)
-			plt.plot(t90_edges, t90_n, linestyle='steps', color='k')
+			plt.step(t90_edges, t90_n, color='k')
 			plt.axvline(x=txx_list.mean(), color='r')
 			plt.axvline(x=txx_list.mean() - t90_err, color='r')
 			plt.axvline(x=txx_list.mean() + t90_err, color='r')
@@ -141,7 +134,7 @@ class Plot(object):
 
 			plt.subplot(1,3,2)
 			plt.title('T'+txx+'1 distribution',**k)
-			plt.plot(t90_edges, t90_n, linestyle='steps', color='k')
+			plt.step(t90_edges, t90_n, color='k')
 			plt.axvline(x=t1_list.mean(), color='r')
 			plt.axvline(x=t1_list.mean() - t1_err, color='r')
 			plt.axvline(x=t1_list.mean() + t1_err, color='r')
@@ -162,7 +155,7 @@ class Plot(object):
 
 			plt.subplot(1, 3, 3)
 			plt.title('T'+txx+'2 distribution')
-			plt.plot(t90_edges, t90_n, linestyle='steps', color='k')
+			plt.step(t90_edges, t90_n, color='k')
 			plt.axvline(x=t2_list.mean(), color='r')
 			plt.axvline(x=t2_list.mean() - t2_err, color='r')
 			plt.axvline(x=t2_list.mean() + t2_err, color='r')

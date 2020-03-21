@@ -8,10 +8,12 @@ def r_baseline(rate,dt,lam = None,hwi = None,it = None,inti = None,case = 'TD'):
 
 	if(lam is None):
 		lam = 100/dt
+	else:
+		lam = lam/dt
 	if(hwi is None):
 		hwi = int(40/dt)
 	if(it is None):
-		it = 10
+		it = 5
 	if(inti is None):
 
 		fillpeak_int = int(len(rate)/10)

@@ -27,7 +27,7 @@ def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = No
 	'''
 	t = np.array(t)
 
-	edges_bin = np.arange(t[0],t[-1]+binsize,binsize)
+	edges_bin = np.arange(t[0],t[-1],binsize)
 
 	bin_n,bin_edges = np.histogram(t,bins = edges_bin)
 
@@ -49,11 +49,6 @@ def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = No
 	by_rate_list = []
 	w = np.ones(len(rate))
 	print(len(good_index))
-	t_range_ = t_c[good_index[0][0]:good_index[-1][-1]+1]
-	bin_n_range = np.around((backobject.cs + bs_m)[good_index[0][0]:good_index[-1][-1]+1] * binsize)
-	edges0 = bayesian_blocks(t_range_,bin_n_range,fitness = 'events',gamma = np.exp(-12))
-	bined_rate = bined_hist(t_range_,bin_n_range,edges0)
-	bined_c = (edges0[1:]+edges0[:-1])*0.5
 
 	t_start = []
 	t_stop = []
@@ -64,24 +59,28 @@ def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = No
 	t_start = np.array(t_start)
 	t_stop = np.array(t_stop)
 	center_time = t_start[1:]-t_stop[:-1]
-	center_time[center_time > 30] = 30
+	center_time[center_time > 32] = 32
+
+	
 	for index,one_index in enumerate(good_index):
 		#print('one_index:',one_index)
 		t_c_in_one = t_c[one_index]
+		
 		if center_time.size == 0:
-			t_in_one_start = t_c_in_one[0] - 30
-			t_in_one_stop = t_c_in_one[-1] + 30
+			t_in_one_start = t_c_in_one[0]-32
+			t_in_one_stop = t_c_in_one[-1]+32
 		else:
 			if index == 0:
-				t_in_one_start = t_c_in_one[0] - 30  # *binsize
-				t_in_one_stop = t_c_in_one[-1] + center_time[index]  # *binsize
-			elif (index == center_time.size):
-
-				t_in_one_start = t_c_in_one[0] - center_time[index - 1]
-				t_in_one_stop = t_c_in_one[-1] + 30
+				t_in_one_start = t_c_in_one[0]-32#*binsize
+				t_in_one_stop = t_c_in_one[-1]+center_time[index]#*binsize
+			elif(index == center_time.size):
+				print('dddd')
+				t_in_one_start = t_c_in_one[0]-center_time[index-1]
+				t_in_one_stop = t_c_in_one[-1]+32
 			else:
-				t_in_one_start = t_c_in_one[0] - center_time[index - 1]
-				t_in_one_stop = t_c_in_one[-1] + center_time[index]
+				t_in_one_start = t_c_in_one[0]-center_time[index-1]
+				t_in_one_stop = t_c_in_one[-1]+center_time[index]
+		
 		print('range:',t_in_one_stop-t_in_one_start)
 		if bayesian:
 			t_in_one = t[np.where((t>=t_in_one_start)&(t<=t_in_one_stop))[0]]
@@ -97,7 +96,6 @@ def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = No
 				#print(t_b)
 				edges = bayesian_blocks(t_b,bin_n_b,fitness = 'events',gamma = np.exp(-12))
 			print('edges: ',edges)
-
 			if len(edges) > 3:#大于3才是有东西
 				edges_c = (edges[1:] + edges[:-1]) * 0.5
 
@@ -124,7 +122,7 @@ def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = No
 				print('max_SNR',max_SNR)
 				if SNR :
 
-					if max_SNR > sigma:#说明有信噪比够好
+					if max_SNR > 0.5:#说明有信噪比够好
 						print('max_good')
 						time_edges.append([t_start, t_stop])
 						max_SNR_list.append(max_SNR)
@@ -132,8 +130,8 @@ def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = No
 						by_rate_list.append(bin_b_rate)
 					else:#信号太弱，忽略脉冲
 						print('max_not_good')
-						#w[np.where((t_c >= t_start) & (t_c <= t_stop))[0]] = 1
-						#bs = WhittakerSmooth(rate, w, lambda_=hardness)
+						w[np.where((t_c >= t_start) & (t_c <= t_stop))[0]] = 1
+						bs = WhittakerSmooth(rate, w, lambda_=hardness)
 
 				else:
 					time_edges.append([t_start, t_stop])
@@ -153,8 +151,7 @@ def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = No
 			'normallization':pp,
 			'sigma':SNR_result['sigma'],
 			'ACC':SNR_result['ACC'],
-			'ACCT':SNR_result['ACCT']
-			}
+			'ACCT':SNR_result['ACCT']}
 		if bayesian:
 			print('have bayesian blocks.')
 			result['bayesian_edges'] = by_edges_list
@@ -172,9 +169,10 @@ def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = No
 	result['rate'] = rate
 	result['normallization'] = pp
 	result['sigma'] = SNR_result['sigma']
-	result['bs'] = bs
+	result['bs'] = bs	
 	result['ACC'] = SNR_result['ACC']
 	result['ACCT'] = SNR_result['ACCT']
+	print(result['ACCT'])
 	if bayesian:
 		print('have bayesian blocks.')
 		result['bayesian_edges'] = by_edges_list
