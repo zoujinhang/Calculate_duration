@@ -1,14 +1,25 @@
 
 from .Plot import Plot
-from .SNR_text import *
 from .get_txx import *
-from .autocorrelation_text import *
+import pandas as pd
 
-from .background_kernel import *
-from .time_unified import *
-
-
-
-
+def save_result(result,savename):
+	'''
+	
+	:param result: the result from get_txx()
+	:param savename:
+	:return:
+	'''
+	txx = result['txx']
+	xx = result['xx']
+	txx_err1 ,txx_err2 = result['txx_err']
+	t1 = result['t1']
+	t1_err1,t1_err2 = result['t1_err']
+	t2 = result['t2']
+	t2_err1,t2_err2 = result['t2_err']
+	news = {'t'+xx:txx,"t"+xx+"_err-":txx_err1,"t"+xx+"_err+":txx_err2,'t'+xx+'_1':t1,"t"+xx+"_1_err-":t1_err1,
+	        "t"+xx+"_1_err+":t1_err2,'t'+xx+'_2':t2,"t"+xx+"_2_err-":t2_err1,"t"+xx+"_2_err+":t2_err2}
+	df = pd.DataFrame(news,columns=['t90',"t90_err-","t90_err+",'t90_1',"t90_1_err-", "t90_1_err+",'t90_2',"t90_2_err-","t90_2_err+"])
+	df.to_csv(savename,index=False,float_format='%.3f')
 
 

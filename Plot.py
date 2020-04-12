@@ -10,14 +10,14 @@ class Plot(object):
 
 		self.result = result
 	
-	def plot_light_curve(self,**k):
+	def plot_light_curve(self,sigma=3,**k):
 		t = self.result['t_c']
 		rate = self.result['rate']
-		sigma = self.result['sigma']
+		sigma_ = self.result['sigma']
 		bs = self.result['bs']
 		plt.plot(t,rate,color = 'b',label = 'light curve',**k)
 		plt.plot(t,bs,color = 'r',label = 'background',**k)
-		plt.plot(t,bs+sigma,color = 'y',label = 'sigma',**k)
+		plt.plot(t,bs+sigma*sigma_,color = 'y',label = r'%s $\sigma$'%sigma,**k)
 
 		try:
 			by_edges_list = self.result['bayesian_edges']
@@ -83,7 +83,7 @@ class Plot(object):
 			for index in range(le):
 				plt.axvline(x = self.result['t1'][index],color = 'g',linestyle = '--')
 				plt.axvline(x = self.result['t2'][index],color = 'g',linestyle = '--')
-				label1 = r'${T_{'+txx+'} = %.3f^{+ %.3f}_{-%.3f}}$ s '% \
+				label1 = r'${T^{'+str(index+1)+'}_{'+txx+'} = %.3f^{+ %.3f}_{-%.3f}}$ s '% \
 				         (self.result['txx'][index],self.result['txx_err'][1][index],self.result['txx_err'][0][index])
 				plt.plot(0,0,',',label = label1)
 			plt.xlabel('time (s)',**k)
@@ -165,17 +165,7 @@ class Plot(object):
 		else:
 			print('T' + txx + ' is not good!')
 
-	def plot_normallization(self,**kwargs):
-		normallization = self.result['normallization']
-		t = self.result['t_c']
-		plt.plot(t,normallization,**kwargs)
-
-
-	def plot_ACC(self,**kwargs):
-
-		ACCT = self.result['ACCT']
-		ACC = self.result['ACC']
-		plt.plot(ACCT,ACC)
+	
 
 
 

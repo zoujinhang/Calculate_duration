@@ -1,268 +1,73 @@
 
-from .SNR_text import *
 from astropy.stats import bayesian_blocks
+import numpy as np
+from .Bayesian_duration import *
+from .Baseline import TD_baseline,WhittakerSmooth
 
-
-def get_txx(t,binsize = 0.5,sigma = 1,step_size = 1,block_n = 50,block_time = None,txx = 0.9,it = 1000,
-	    bayesian = True,SNR =True,
-	    time_unified = True,
-	    hardness = 100
-
-	    ):
+def get_txx(t,binsize = 0.64,background_degree = 7,sigma = 5,time_edges = None,txx = 0.9,it = 100,prior = 5,plot_check = None,hardnss=100.):
 	'''
-
-	:param t: 光子的时间
-	:param binsize: 切片的大小
-	:param sigma: 信噪比判定标准
-	:param step_size: 浮动块移动步长
-	:param block_n: 浮动块大小
-	:param block_time: or 浮动块时长
-	:param txx:
-	:param it: MCMC 迭代次数
-	:param bayesian: bayesian 判定
-	:param SNR: 信噪比判定
-	:param time_unified: 背景时间标准化
-	:param hardness: 背景硬度
-	:return: 字典
+	
+	:param t: an 1D-array of event times
+	:param binsize: binsize of light curve.
+	:param background_degree: the degree to which background floats. lt is used for background assessment.
+	:param sigma: bayesian blocks signal strength.
+	:param time_edges: time_edges = [time_start,time_stop] ,time_start>=t.min time_stop <=t.max
+	:param txx: if you want to estimate T90 ,txx = 0.9.
+	:param it:
+	:param prior: bayesian_blocks parameter
+	:param plot_check:
+	:param lamd_: Background line hardness
+	:return:
 	'''
 	t = np.array(t)
-
-	edges_bin = np.arange(t[0],t[-1],binsize)
-
-	bin_n,bin_edges = np.histogram(t,bins = edges_bin)
-
-	t_c = (bin_edges[1:]+bin_edges[:-1])*0.5
-	rate = bin_n/binsize
-
-	backobject = Baseline_in_time(t_c,rate,case = 'TD')
-	bs_m = np.mean(backobject.bs)
-	SNR_result = SNR_text(t_c,backobject.cs+bs_m,step_size = step_size,
-			      block_n = block_n,block_time = block_time,
-			      time_unified=time_unified,lambda_= hardness)
-	bs = SNR_result['bs']+backobject.bs - bs_m
-	good_index = SNR_result['good_index']
-	pp = SNR_result['normallization']
-	#贝叶斯
-	time_edges = []
-	max_SNR_list = []
-	by_edges_list = []
-	by_rate_list = []
-	w = np.ones(len(rate))
-	print(len(good_index))
-
-	t_start = []
-	t_stop = []
-	for one_index in good_index:
-		t_c_in_one = t_c[one_index]
-		t_start.append(t_c_in_one[0])#-40#*binsize
-		t_stop.append(t_c_in_one[-1])#+40#*binsize
-	t_start = np.array(t_start)
-	t_stop = np.array(t_stop)
-	center_time = t_start[1:]-t_stop[:-1]
-	center_time[center_time > 32] = 32
-
-	
-	for index,one_index in enumerate(good_index):
-		#print('one_index:',one_index)
-		t_c_in_one = t_c[one_index]
-		
-		if center_time.size == 0:
-			t_in_one_start = t_c_in_one[0]-32
-			t_in_one_stop = t_c_in_one[-1]+32
-		else:
-			if index == 0:
-				t_in_one_start = t_c_in_one[0]-32#*binsize
-				t_in_one_stop = t_c_in_one[-1]+center_time[index]#*binsize
-			elif(index == center_time.size):
-				print('dddd')
-				t_in_one_start = t_c_in_one[0]-center_time[index-1]
-				t_in_one_stop = t_c_in_one[-1]+32
-			else:
-				t_in_one_start = t_c_in_one[0]-center_time[index-1]
-				t_in_one_stop = t_c_in_one[-1]+center_time[index]
-		
-		print('range:',t_in_one_stop-t_in_one_start)
-		if bayesian:
-			t_in_one = t[np.where((t>=t_in_one_start)&(t<=t_in_one_stop))[0]]
-
-			if len(t_in_one) <= 50000:
-
-				edges = bayesian_blocks(t_in_one,fitness = 'events',gamma = np.exp(-12))
-			else:
-				t_b_index = np.where((t_c>=t_in_one_start)&(t_c<=t_in_one_stop))[0]
-				t_b = t_c[t_b_index]
-				#bin_n_b = bin_n[t_b_index]
-				bin_n_b = np.around((backobject.cs+bs_m)[t_b_index]*binsize)
-				#print(t_b)
-				edges = bayesian_blocks(t_b,bin_n_b,fitness = 'events',gamma = np.exp(-12))
-			print('edges: ',edges)
-			if len(edges) > 3:#大于3才是有东西
-				edges_c = (edges[1:] + edges[:-1]) * 0.5
-
-
-				bin_n_by, bin_b_edges = np.histogram(t_in_one, bins=edges)  # 统计
-				bin_b_size = bin_b_edges[1:] - bin_b_edges[:-1]
-				bin_b_rate = bin_n_by / bin_b_size
-
-
-				t_start, t_stop = found_edges(edges, bin_b_rate)
-				w[np.where((t_c >= t_start) & (t_c <= t_stop))[0]] = 0
-				#w[np.where((t_c >= t_start - 5 * binsize) & (t_c <= t_stop + 5 * binsize))[0]] = 0
-				bs = WhittakerSmooth(rate,w,lambda_= hardness) #背景修正
-
-				t_c_in_one1 = t_c[np.where((t_c >= edges[0]) & (t_c <= edges[-1]))[0]]
-				bs_in_one = bs[np.where((t_c >= edges[0]) & (t_c <= edges[-1]))[0]]
-				bs_mean = np.interp(edges_c, t_c_in_one1, bs_in_one)
-				# bs_mean = bined_hist(t_c_in_one1,bs_in_one,bins = edges)
-
-
-				SNR_block = ((bin_b_rate-bs_mean)/SNR_result['sigma'])
-				bin_b_rate = np.concatenate((bin_b_rate[:1], bin_b_rate))
-				max_SNR = np.max(SNR_block[1:-1])
-				print('max_SNR',max_SNR)
-				if SNR :
-
-					if max_SNR > 0.5:#说明有信噪比够好
-						print('max_good')
-						time_edges.append([t_start, t_stop])
-						max_SNR_list.append(max_SNR)
-						by_edges_list.append(bin_b_edges)
-						by_rate_list.append(bin_b_rate)
-					else:#信号太弱，忽略脉冲
-						print('max_not_good')
-						w[np.where((t_c >= t_start) & (t_c <= t_stop))[0]] = 1
-						bs = WhittakerSmooth(rate, w, lambda_=hardness)
-
-				else:
-					time_edges.append([t_start, t_stop])
-					max_SNR_list.append(max_SNR)
-					by_edges_list.append(bin_b_edges)
-					by_rate_list.append(bin_b_rate)
-		else:
-			w[np.where((t_c >= t_in_one_start ) & (t_c <= t_in_one_stop ))[
-				0]] = 0
-			time_edges.append([t_c_in_one[0],t_c_in_one[-1]])
-	if(len(time_edges) == 0):
-		print('we do not find a pulse !')
-		result = {'good':False,
-			't_c':t_c,
-			'rate':rate,
-			'bs':bs,
-			'normallization':pp,
-			'sigma':SNR_result['sigma'],
-			'ACC':SNR_result['ACC'],
-			'ACCT':SNR_result['ACCT']}
-		if bayesian:
-			print('have bayesian blocks.')
-			result['bayesian_edges'] = by_edges_list
-			result['bayesian_rate'] = by_rate_list
-		return result
-	time_edges = np.array(time_edges).T
-	
-	time_start = time_edges[0]
-	time_stop = time_edges[1]
-	print('accumulate')
-	result = accumulate_counts(t_c,bin_n,np.sqrt(bin_n),w,time_start,time_stop,txx =txx,it = it,lamd=hardness)
-	print('accumulate over')
-	result['time_edges'] = time_edges
-	result['t_c'] = t_c
-	result['rate'] = rate
-	result['normallization'] = pp
-	result['sigma'] = SNR_result['sigma']
-	result['bs'] = bs	
-	result['ACC'] = SNR_result['ACC']
-	result['ACCT'] = SNR_result['ACCT']
-	print(result['ACCT'])
-	if bayesian:
-		print('have bayesian blocks.')
-		result['bayesian_edges'] = by_edges_list
-		result['bayesian_rate'] = by_rate_list
-
-	return result
-
-
-
-
-def bined_hist(t,v,bins):
-	t = np.array(t)
-	v = np.array(v)
-	re = []
-	bin_start = bins[:-1]
-	bin_stop = bins[1:]
-	n = len(bin_start)
-	for i in range(n):
-
-		vin = v[np.where((t>=bin_start[i])&(t<=bin_stop[i]))[0]]
-		aa = np.mean(vin)
-		re.append(aa)
-	return np.array(re)
-
-def found_edges(edges,v):
-	if len(edges) == 4:
-		return 0.5*(edges[0]+edges[1]),0.5*(edges[2]+edges[3])
-	edges  =  np.array(edges)
-	v = np.array(v)
-	edges_start = edges[:-1]
-	edges_stop = edges[1:]
-	edges_size = edges_stop - edges_start
-	if (len(edges) < 6):
-		k = 2
+	if time_edges is None:
+		t_start = t.min()
+		t_stop = t.max()
+		bins = np.arange(t_start,t_stop,binsize)
 	else:
-		k = 3
-	size_sort = np.sort(edges_size)[-k:]  #尺寸最大的块
-	start_time = edges_start[0]
-	stop_time = edges_stop[-1]
-	trait = []
-	fringe = 1
-	cafe = 2
-	pulse = 3
-	for i in range(len(v)):
-		if (i == 0):
-
-			if(v[i] < v[i+1])and(edges_size[i] in size_sort):
-				trait.append(cafe)
-			else:
-				trait.append(fringe)
-				v[i] = v[i+1]+1
-			if(v[len(v)-1] <= v[len(v)-2])and(edges_size[len(v)-1] not in size_sort):
-				v[len(v)-1] = v[len(v)-2]+1
-				
-		elif(i == len(v)-1):
-
-			if(v[i] < v[i-1])and(edges_size[i] in size_sort):
-				trait.append(cafe)
-			else:
-				trait.append(fringe)
-
-		else:
-			if ((v[i] > v[i-1])and(v[i] > v[i+1])):
-				trait.append(pulse)
-			elif((v[i] < v[i-1])and(v[i]<v[i+1])):
-				trait.append(cafe)
-			else:
-				trait.append(fringe)
-	for i in range(len(v)):
-		if(trait[i] == cafe):
-			start_time = edges_stop[i] - 0.5
-			break
-	for i in range(len(v)):
-		if(trait[-1-i] == cafe):
-			stop_time = edges_start[-1 - i] + 0.5
-			break
-	return start_time,stop_time
-
-def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100):
+		t_start = time_edges[0]
+		t_stop = time_edges[1]
+		bins = np.arange(t_start,t_stop+binsize,binsize)
+	bin_n,bin_edges = np.histogram(t,bins = bins)
+	rate = bin_n/binsize
+	t_c = (bin_edges[1:]+bin_edges[:-1])*0.5
+	t_c,cs_rate,bs_rate = TD_baseline(t_c,rate)
+	rate_sm = cs_rate+bs_rate.mean()
+	bin_n_sm = np.round(rate_sm*binsize)
+	edges = bayesian_blocks(t_c,bin_n_sm,fitness='events',gamma = np.exp(-prior))
+	result = background_correction(t_c,rate_sm,edges,degree = background_degree,plot_save=plot_check)
+	startedges,stopedges = get_bayesian_duration(result,sigma = sigma)
+	w = np.ones(len(t_c))
+	for ij in range(len(startedges)):
+		index_w = np.where((t_c>=startedges[ij])&(t_c<=stopedges[ij]))[0]
+		w[index_w] = 0
+	c_rate = result['lc'][1]
+	sigma = result['bkg'][2]
+	re_rate = result['re_hist'][0]
+	result1 = accumulate_counts(t_c,c_rate*binsize,np.sqrt(bin_n),w,startedges,stopedges,txx = txx,it = it,lamd = hardnss/binsize)
+	result1['time_edges'] = [startedges,stopedges]
+	result1['t_c'] = t_c
+	result1['rate'] = c_rate
+	result1['bs'] = WhittakerSmooth(c_rate,w,lambda_=hardnss/binsize)
+	result1['good'] = True
+	result1['xx'] = str(int(100*txx))
+	result1['sigma'] = sigma
+	result1['bayesian_edges'] = [edges]
+	result1['bayesian_rate'] = [np.concatenate((re_rate[:1], re_rate))]
+	return result1
+	
+def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.):
 	'''
 
-	:param t: 时间
-	:param n: 计数
-	:param n_err: 计数误差
-	:param sigma: 背景区平均sigma
-	:param w: 权重
-	:param t_start: 开始时间
-	:param t_stop: 结束时间
-	:param txx:
-	:param it: 迭代次数
+	:param t: lightcurve time
+	:param n: lightcurve counts
+	:param n_err: lightcurve conts err
+	:param sigma: Background region sigma
+	:param w: The weight
+	:param t_start:
+	:param t_stop:
+	:param txx: if you want to estimate T90 ,txx = 0.9.
+	:param it:
 	:return:
 	'''
 	txx = 1.-txx
