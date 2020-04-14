@@ -20,6 +20,6 @@ def save_result(result,savename):
 	news = {'t'+xx:txx,"t"+xx+"_err-":txx_err1,"t"+xx+"_err+":txx_err2,'t'+xx+'_1':t1,"t"+xx+"_1_err-":t1_err1,
 	        "t"+xx+"_1_err+":t1_err2,'t'+xx+'_2':t2,"t"+xx+"_2_err-":t2_err1,"t"+xx+"_2_err+":t2_err2}
 	df = pd.DataFrame(news,columns=['t90',"t90_err-","t90_err+",'t90_1',"t90_1_err-", "t90_1_err+",'t90_2',"t90_2_err-","t90_2_err+"])
-	df.to_csv(savename,index=False,float_format='%.3f')
+	df.to_csv(savename,index=False,float_format='%.2f')
 
 
