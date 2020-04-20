@@ -4,16 +4,17 @@ import numpy as np
 from .Bayesian_duration import *
 from .Baseline import TD_baseline,WhittakerSmooth
 
-def get_txx(t,binsize = 0.64,background_degree = 7,sigma = 5,time_edges = None,txx = 0.9,it = 100,prior = 5,plot_check = None,hardnss=100.):
+def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,txx = 0.9,it = 300,prior = 5,p0 = 0.05,plot_check = None,hardnss=100.):
 	'''
 	
-	:param t: an 1D-array of event times
+	:param t: an 1D-array of event times.
 	:param binsize: binsize of light curve.
 	:param background_degree: the degree to which background floats. lt is used for background assessment.
-	:param sigma: bayesian blocks signal strength.
+	:param sigma: The threshold value of bayesian block signal strength used to judge the background area.
 	:param time_edges: time_edges = [time_start,time_stop] ,time_start>=t.min time_stop <=t.max
 	:param txx: if you want to estimate T90 ,txx = 0.9.
-	:param it:
+	:param it: Number of mcmc samples.
+	:param p0: bayesian_blocks parameter, p0 is only valid if binsize less than 0.064
 	:param prior: bayesian_blocks parameter
 	:param plot_check:
 	:param lamd_: Background line hardness
@@ -23,32 +24,52 @@ def get_txx(t,binsize = 0.64,background_degree = 7,sigma = 5,time_edges = None,t
 	if time_edges is None:
 		t_start = t.min()
 		t_stop = t.max()
+		
 		bins = np.arange(t_start,t_stop,binsize)
 	else:
 		t_start = time_edges[0]
 		t_stop = time_edges[1]
-		bins = np.arange(t_start,t_stop+binsize,binsize)
+		t_index = np.where((t >= t_start)&(t<= t_stop))[0]
+		t = t[t_index]
+		bins = np.arange(t_start,t_stop,binsize)
 	bin_n,bin_edges = np.histogram(t,bins = bins)
 	rate = bin_n/binsize
 	t_c = (bin_edges[1:]+bin_edges[:-1])*0.5
 	t_c,cs_rate,bs_rate = TD_baseline(t_c,rate)
 	rate_sm = cs_rate+bs_rate.mean()
-	bin_n_sm = np.round(rate_sm*binsize)
-	edges = bayesian_blocks(t_c,bin_n_sm,fitness='events',gamma = np.exp(-prior))
+	#bin_n_sm = np.round(rate_sm*binsize)
+	if binsize<0.064:
+		if len(t)>40000:
+			print('the size of t is ',len(t))
+			print('binsize < 0.064, so will execute the following command:')
+			print("bayesian_blocks(t,fitness='events',p0 = p0)")
+			print('but the size of t is over 40000, longer computation times may be required.')
+		edges = bayesian_blocks(t,fitness='events',p0 = p0)
+		sizes = edges[1:]-edges[:-1]
+		gg = np.around(edges/binsize)
+		gg = np.unique(gg)
+		gg = np.sort(gg)
+		edges = gg*binsize
+		print('min size :',sizes.min())
+	else:
+		edges = bayesian_blocks(t_c,bin_n,fitness='events',gamma = np.exp(-prior))
 	result = background_correction(t_c,rate_sm,edges,degree = background_degree,plot_save=plot_check)
 	startedges,stopedges = get_bayesian_duration(result,sigma = sigma)
 	w = np.ones(len(t_c))
+
 	for ij in range(len(startedges)):
 		index_w = np.where((t_c>=startedges[ij])&(t_c<=stopedges[ij]))[0]
 		w[index_w] = 0
+
 	c_rate = result['lc'][1]
 	sigma = result['bkg'][2]
 	re_rate = result['re_hist'][0]
-	result1 = accumulate_counts(t_c,c_rate*binsize,np.sqrt(bin_n),w,startedges,stopedges,txx = txx,it = it,lamd = hardnss/binsize)
+
+	result1 = accumulate_counts(t_c,c_rate*binsize,np.sqrt(np.abs(c_rate*binsize)),w,startedges,stopedges,txx = txx,it = it,lamd = hardnss/binsize**1.5)
 	result1['time_edges'] = [startedges,stopedges]
 	result1['t_c'] = t_c
 	result1['rate'] = c_rate
-	result1['bs'] = WhittakerSmooth(c_rate,w,lambda_=hardnss/binsize)
+	result1['bs'] = WhittakerSmooth(c_rate,w,lambda_=hardnss/binsize**1.5)
 	result1['good'] = True
 	result1['xx'] = str(int(100*txx))
 	result1['sigma'] = sigma
@@ -77,7 +98,7 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.
 	tmin_ = t_start[0]-60*dt
 	if tmin_<t[0]:
 		tmin_ = t[0]
-	tmax_ = t_stop[-1]+60*dt
+	tmax_ = t_stop[-1]+70*dt
 	if tmax_>t[-1]:
 		tmax_ = t[-1]
 
@@ -99,7 +120,7 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.
 	index_sort = np.argsort(duration)[0]
 	
 
-	if len(np.where((t>=t_start[index_sort]) & (t<= t_stop[index_sort]))[0])<100:#这里是为了提高精度
+	if len(np.where((t>=t_start[index_sort]) & (t<= t_stop[index_sort]))[0])<100:
 		d_t = (t_stop[index_sort]-t_start[index_sort])/100
 		print('dt for interp:',d_t)
 		t_l = np.arange(tmin_, tmax_+d_t, d_t)

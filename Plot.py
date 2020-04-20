@@ -49,10 +49,27 @@ class Plot(object):
 			for i in self.result['bs_list']:
 				plt.plot(t,i/dt,color = 'r',alpha = 0.01)
 			for index in range(le):
-				t1_label = r'${T^{'+str(index+1)+'}_{'+txx+',1} = %.2f ^ {+ %.2f}_{-%.2f}}$ s '% \
-				           (self.result['t1'][index],self.result['t1_err'][1][index],self.result['t1_err'][0][index])
-				t2_label = r'${T^{'+str(index+1)+'}_{'+txx+',2} = %.2f ^ {+ %.2f}_{-%.2f}}$ s '% \
-				           (self.result['t2'][index],self.result['t2_err'][1][index],self.result['t2_err'][0][index])
+				t1 = '%.2f' % self.result['t1'][index]
+				if np.round(self.result['t1_err'][1][index]*100) == 0:
+					t1_err1 = '%.3f' % self.result['t1_err'][1][index]
+				else:
+					t1_err1 = '%.2f' % self.result['t1_err'][1][index]
+				if np.round(self.result['t1_err'][0][index]*100) == 0:
+					t1_err2 = '%.3f' % self.result['t1_err'][0][index]
+				else:
+					t1_err2 = '%.2f' % self.result['t1_err'][0][index]
+					
+				t1_label = r'${T^{'+str(index+1)+'}_{'+txx+',1} = '+t1+' ^ {+ '+t1_err1+'}_{-'+t1_err2+'}}$ s '
+				t2 = '%.2f' % self.result['t2'][index]
+				if np.round(self.result['t2_err'][1][index]*100) == 0:
+					t2_err1 = '%.3f' % self.result['t2_err'][1][index]
+				else:
+					t2_err1 = '%.2f' % self.result['t2_err'][1][index]
+				if np.round(self.result['t2_err'][0][index]*100) == 0:
+					t2_err2 = '%.3f' % self.result['t2_err'][0][index]
+				else:
+					t2_err2 = '%.2f' % self.result['t2_err'][0][index]
+				t2_label = r'${T^{'+str(index+1)+'}_{'+txx+',2} = '+t2+' ^ {+ '+t2_err1+'}_{-'+t2_err2+'}}$ s  '
 				
 				plt.axvline(x = self.result['t1'][index],color = 'g',linestyle = '--')
 				plt.axvline(x = self.result['t2'][index],color = 'g',linestyle = '--')
@@ -83,8 +100,16 @@ class Plot(object):
 			for index in range(le):
 				plt.axvline(x = self.result['t1'][index],color = 'g',linestyle = '--')
 				plt.axvline(x = self.result['t2'][index],color = 'g',linestyle = '--')
-				label1 = r'${T^{'+str(index+1)+'}_{'+txx+'} = %.2f^{+ %.2f}_{-%.2f}}$ s '% \
-				         (self.result['txx'][index],self.result['txx_err'][1][index],self.result['txx_err'][0][index])
+				txx = '%.2f' % self.result['txx'][index]
+				if np.round(self.result['txx_err'][1][index]*100) == 0:
+					txx_err1 = '%.3f' % self.result['txx_err'][1][index]
+				else:
+					txx_err1 = '%.2f' % self.result['txx_err'][1][index]
+				if np.round(self.result['txx_err'][0][index]*100) == 0:
+					txx_err2 = '%.3f' % self.result['txx_err'][0][index]
+				else:
+					txx_err2 = '%.2f' % self.result['txx_err'][0][index]
+				label1 = r'${T^{'+str(index+1)+'}_{'+txx+'} = '+txx+'^{+ '+txx_err1+'}_{-'+txx_err2+'}}$ s '
 				plt.plot(0,0,',',label = label1)
 			plt.xlabel('time (s)',**k)
 			plt.ylabel('Accumulated counts',**k)
