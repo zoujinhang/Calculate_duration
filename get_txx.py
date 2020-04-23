@@ -65,7 +65,7 @@ def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,
 	sigma = result['bkg'][2]
 	re_rate = result['re_hist'][0]
 
-	result1 = accumulate_counts(t_c,c_rate*binsize,np.sqrt(np.abs(c_rate*binsize)),w,startedges,stopedges,txx = txx,it = it,lamd = hardnss/binsize**1.5)
+	result1 = accumulate_counts(t_c,c_rate*binsize,np.sqrt(np.abs(c_rate*binsize)),w,startedges,stopedges,txx = txx,it = it,lamd = hardnss)
 	result1['time_edges'] = [startedges,stopedges]
 	result1['t_c'] = t_c
 	result1['rate'] = c_rate
@@ -95,10 +95,11 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.
 	t = np.array(t)
 	n = np.array(n)
 	dt = t[1]-t[0]
-	tmin_ = t_start[0]-60*dt
+	lamd = lamd/dt**1.5
+	tmin_ = t_start[0]-10
 	if tmin_<t[0]:
 		tmin_ = t[0]
-	tmax_ = t_stop[-1]+70*dt
+	tmax_ = t_stop[-1]+10
 	if tmax_>t[-1]:
 		tmax_ = t[-1]
 
