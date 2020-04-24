@@ -152,10 +152,10 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.
 			l1i = dd + csf_fit_list[index]
 			l2i = csf_fit_list[index+1] - dd
 			#------------------------------------------------
-			if 3*duration[index]>10:
+			if 3*duration[index]>5:
 				bb = 3*duration[index]
 			else:
-				bb = 10
+				bb = 5
 			t1_range1 = t_start[index]-bb
 			t2_range2 = t_stop[index]+bb
 			if index <len(t_start)-1:
@@ -222,10 +222,10 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.
 						l11 = dd + csf_fit_list1[index]
 						l21 = csf_fit_list1[index + 1] - dd
 						
-						if 3*t90[index]>10:
+						if 3*t90[index]>5:
 							bb = 3*t90[index]
 						else:
-							bb = 10
+							bb = 5
 						t1_range1 = t_start[index]-bb
 						t1_range2 = t_start[index]+bb
 						t2_range1 = t_stop[index]-bb
