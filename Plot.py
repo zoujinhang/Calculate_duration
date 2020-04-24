@@ -11,26 +11,29 @@ class Plot(object):
 		self.result = result
 	
 	def plot_light_curve(self,sigma=3,**k):
-		t = self.result['t_c']
-		rate = self.result['rate']
-		sigma_ = self.result['sigma']
-		bs = self.result['bs']
-		plt.plot(t,rate,color = 'b',label = 'light curve',**k)
-		plt.plot(t,bs,color = 'r',label = 'background',**k)
-		plt.plot(t,bs+sigma*sigma_,color = 'y',label = r'%s $\sigma$'%sigma,**k)
-
-		try:
-			by_edges_list = self.result['bayesian_edges']
-			by_rate_list = self.result['bayesian_rate']
-			for index in range(len(by_edges_list)):
-
-				plt.step(by_edges_list[index],by_rate_list[index],color = 'k',**k)
-			plt.plot(0,0,color = 'k',label = 'bayesian blocks')
-		except:
-			print('have none bayesian blocks')
-			pass
-		plt.legend()
-		plt.xlim([t[0],t[-1]])
+		if self.result['good']:
+			t = self.result['t_c']
+			rate = self.result['rate']
+			sigma_ = self.result['sigma']
+			bs = self.result['bs']
+			plt.plot(t,rate,color = 'b',label = 'light curve',**k)
+			plt.plot(t,bs,color = 'r',label = 'background',**k)
+			plt.plot(t,bs+sigma*sigma_,color = 'y',label = r'%s $\sigma$'%sigma,**k)
+	
+			try:
+				by_edges_list = self.result['bayesian_edges']
+				by_rate_list = self.result['bayesian_rate']
+				for index in range(len(by_edges_list)):
+	
+					plt.step(by_edges_list[index],by_rate_list[index],color = 'k',**k)
+				plt.plot(0,0,color = 'k',label = 'bayesian blocks')
+			except:
+				print('have none bayesian blocks')
+				pass
+			plt.legend()
+			plt.xlim([t[0],t[-1]])
+		else:
+			print('result is not good!')
 
 	def plot_Txx1(self,txx,**k):
 

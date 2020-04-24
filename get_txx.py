@@ -4,7 +4,7 @@ import numpy as np
 from .Bayesian_duration import *
 from .Baseline import TD_baseline,WhittakerSmooth
 
-def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,txx = 0.9,it = 300,prior = 5,p0 = 0.05,plot_check = None,hardnss=100.):
+def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,txx = 0.9,it = 300,p0 = 0.05,plot_check = None,hardnss=100.):
 	'''
 	
 	:param t: an 1D-array of event times.
@@ -14,8 +14,7 @@ def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,
 	:param time_edges: time_edges = [time_start,time_stop] ,time_start>=t.min time_stop <=t.max
 	:param txx: if you want to estimate T90 ,txx = 0.9.
 	:param it: Number of mcmc samples.
-	:param p0: bayesian_blocks parameter, p0 is only valid if binsize less than 0.064
-	:param prior: bayesian_blocks parameter
+	:param p0: bayesian_blocks parameter
 	:param plot_check:
 	:param lamd_: Background line hardness
 	:return:
@@ -52,7 +51,7 @@ def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,
 		edges = gg*binsize
 		print('min size :',sizes.min())
 	else:
-		edges = bayesian_blocks(t_c,bin_n,fitness='events',gamma = np.exp(-prior))
+		edges = bayesian_blocks(t_c,bin_n,fitness='events',p0=p0)
 	result = background_correction(t_c,rate_sm,edges,degree = background_degree,plot_save=plot_check)
 	startedges,stopedges = get_bayesian_duration(result,sigma = sigma)
 	w = np.ones(len(t_c))
@@ -95,11 +94,11 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.
 	t = np.array(t)
 	n = np.array(n)
 	dt = t[1]-t[0]
-	lamd = lamd/dt**1.5
-	tmin_ = t_start[0]-10
+	lamd = lamd/dt**2
+	tmin_ = t_start[0]-5
 	if tmin_<t[0]:
 		tmin_ = t[0]
-	tmax_ = t_stop[-1]+10
+	tmax_ = t_stop[-1]+6
 	if tmax_>t[-1]:
 		tmax_ = t[-1]
 
@@ -185,8 +184,9 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.
 	bs_list = []
 	index_list = []
 	nnn = 0
-
+	nnnn = 0
 	while nnn < it:
+		nnnn = nnnn+1
 		try:
 			
 			bin_ratexx = n + n_err * np.random.randn(len(n_err))
@@ -259,6 +259,8 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.
 
 		except:
 			continue
+		if nnnn > it * 100:
+			return {'good': False}
 	t90_list = np.array(t90_list)
 	t1_list = np.array(t1_list)
 	t2_list = np.array(t2_list)
