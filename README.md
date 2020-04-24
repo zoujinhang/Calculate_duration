@@ -11,5 +11,10 @@ Bayesian blocks和baseline算法联合计算信噪比时引入了一个描述背
 算法的灵敏度由Bayesian blocks算法的灵敏度决定。
 
 
+实验脚本
+```
+zjh_exmple_Calculate_duration.py
+```
+list.txt中，列一次为，爆发名称，爆发年份，能量下限，能量上限，起始时间，终止时间。
 
 
