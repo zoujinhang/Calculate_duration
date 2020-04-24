@@ -62,7 +62,7 @@ for i in range(len(sample_list)):
 	if os.path.exists(savedir) == False:
 		os.makedirs(savedir)
 	
-	result = get_txx(t,binsize = 0.01,time_edges=[start,stop],background_degree=7,sigma = 5,txx = 0.9,it = 300,prior = 5,plot_check=savedir + 'Z_'+sample_list[i]+'_check.png',hardnss=100)
+	result = get_txx(t,binsize = 0.01,time_edges=[start,stop],background_degree=7,sigma = 5,txx = 0.9,it = 300,p0=0.05,plot_check=savedir + 'Z_'+sample_list[i]+'_check.png',hardnss=100)
 	#----------------------------------------------------------------------------
 	
 	save_result(result,savedir + 'C_'+sample_list[i]+'_T90.csv',float_format='%.3f')
