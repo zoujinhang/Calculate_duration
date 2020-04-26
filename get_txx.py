@@ -28,7 +28,7 @@ def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,
 	else:
 		t_start = time_edges[0]
 		t_stop = time_edges[1]
-		t_index = np.where((t >= t_start)&(t<= t_stop))[0]
+		t_index = np.where((t >= t_start)&(t<= t_stop+binsize))[0]
 		t = t[t_index]
 		bins = np.arange(t_start,t_stop,binsize)
 	bin_n,bin_edges = np.histogram(t,bins = bins)
@@ -94,11 +94,14 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.
 	t = np.array(t)
 	n = np.array(n)
 	dt = t[1]-t[0]
+	dif = np.array(t_stop) - np.array(t_start)
+	dif[dif > 20] = 20
+	dif[dif <5] = 5
 	lamd = lamd/dt**2
-	tmin_ = t_start[0]-5
+	tmin_ = t_start[0]-dif[0]
 	if tmin_<t[0]:
 		tmin_ = t[0]
-	tmax_ = t_stop[-1]+6
+	tmax_ = t_stop[-1]+dif[-1]
 	if tmax_>t[-1]:
 		tmax_ = t[-1]
 
@@ -152,10 +155,10 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.
 			l1i = dd + csf_fit_list[index]
 			l2i = csf_fit_list[index+1] - dd
 			#------------------------------------------------
-			if 3*duration[index]>5:
+			if 3*duration[index]>10:
 				bb = 3*duration[index]
 			else:
-				bb = 5
+				bb = 10
 			t1_range1 = t_start[index]-bb
 			t2_range2 = t_stop[index]+bb
 			if index <len(t_start)-1:
@@ -222,10 +225,10 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.
 						l11 = dd + csf_fit_list1[index]
 						l21 = csf_fit_list1[index + 1] - dd
 						
-						if 3*t90[index]>5:
+						if 3*t90[index]>10:
 							bb = 3*t90[index]
 						else:
-							bb = 5
+							bb = 10
 						t1_range1 = t_start[index]-bb
 						t1_range2 = t_start[index]+bb
 						t2_range1 = t_stop[index]-bb

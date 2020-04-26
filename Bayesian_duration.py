@@ -230,11 +230,12 @@ def get_bayesian_duration(data,sigma = 5):
 				stop_edges.append(binstart[index])
 				start_tag = False
 	if start_tag:
-		start_edges.pop()
-	print(start_edges)
-	if start_edges[0] == binstart[0]:
-		start_edges = start_edges[1:]
-		stop_edges = stop_edges[1:]
+		if len(start_edges)>0:
+			start_edges.pop()
+	if len(start_edges)>0:
+		if start_edges[0] == binstart[0]:
+			start_edges = start_edges[1:]
+			stop_edges = stop_edges[1:]
 	return np.array(start_edges),np.array(stop_edges)
 
 def get_bayesian_flash(data,start_edges,stop_edges):
