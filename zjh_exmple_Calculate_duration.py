@@ -40,7 +40,18 @@ def ch_to_energy(time,ch,ch_n,e1,e2):
 	new_energy = new_energy[index_all]
 	return new_t,new_energy
 
-
+def get_energy_of_ch(time,e1,e2):
+	'''
+	
+	:param time: time
+	:param e1:
+	:param e2:
+	:return:
+	'''
+	numb = len(time)
+	energy_random_arr = np.random.random_sample(numb)
+	energy_array = e1 + (e2-e1)*energy_random_arr
+	return energy_array
 
 
 for i in range(len(sample_list)):

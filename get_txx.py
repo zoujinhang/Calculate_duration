@@ -54,27 +54,39 @@ def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,
 		edges = bayesian_blocks(t_c,bin_n,fitness='events',p0=p0)
 	result = background_correction(t_c,rate_sm,edges,degree = background_degree,plot_save=plot_check)
 	startedges,stopedges = get_bayesian_duration(result,sigma = sigma)
+	
 	w = np.ones(len(t_c))
-
+	
 	for ij in range(len(startedges)):
 		index_w = np.where((t_c>=startedges[ij])&(t_c<=stopedges[ij]))[0]
 		w[index_w] = 0
-
+	
 	c_rate = result['lc'][1]
-	sigma = result['bkg'][2]
+	sigma = result['bkg'][1]
 	re_rate = result['re_hist'][0]
-
-	result1 = accumulate_counts(t_c,c_rate*binsize,np.sqrt(np.abs(c_rate*binsize)),w,startedges,stopedges,txx = txx,it = it,lamd = hardnss)
-	result1['time_edges'] = [startedges,stopedges]
-	result1['t_c'] = t_c
-	result1['rate'] = c_rate
-	result1['bs'] = WhittakerSmooth(c_rate,w,lambda_=hardnss/binsize**1.5)
-	result1['good'] = True
-	result1['xx'] = str(int(100*txx))
-	result1['sigma'] = sigma
-	result1['bayesian_edges'] = [edges]
-	result1['bayesian_rate'] = [np.concatenate((re_rate[:1], re_rate))]
-	return result1
+	if len(startedges) > 0:
+		result1 = accumulate_counts(t_c,c_rate*binsize,np.sqrt(np.abs(c_rate*binsize)),w,startedges,stopedges,txx = txx,it = it,lamd = hardnss)
+		result1['time_edges'] = [startedges,stopedges]
+		result1['t_c'] = t_c
+		result1['rate'] = c_rate
+		result1['bs'] = WhittakerSmooth(c_rate,w,lambda_=hardnss/binsize**2)
+		result1['good'] = True
+		result1['xx'] = str(int(100*txx))
+		result1['sigma'] = sigma
+		result1['bayesian_edges'] = [edges]
+		result1['bayesian_rate'] = [np.concatenate((re_rate[:1], re_rate))]
+		return result1
+	else:
+		c = {'good':False,
+		     't_c': t_c,
+		     'rate':rate,
+		     'bs':bs_rate,
+		     'xx':str(int(100*txx)),
+		     'sigma':sigma,
+		     'bayesian_edges':[edges],
+		     'bayesian_rate':[np.concatenate((re_rate[:1], re_rate))],
+		     }
+		return c
 	
 def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.):
 	'''
