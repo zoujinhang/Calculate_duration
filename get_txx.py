@@ -4,7 +4,9 @@ import numpy as np
 from .Bayesian_duration import *
 from .Baseline import TD_baseline,WhittakerSmooth
 
-def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,txx = 0.9,it = 300,p0 = 0.05,plot_check = None,hardnss=100.):
+def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,txx = 0.9,
+            it = 300,multple = True,
+            p0 = 0.05,plot_check = None,hardnss=100.):
 	'''
 	
 	:param t: an 1D-array of event times.
@@ -14,6 +16,7 @@ def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,
 	:param time_edges: time_edges = [time_start,time_stop] ,time_start>=t.min time_stop <=t.max
 	:param txx: if you want to estimate T90 ,txx = 0.9.
 	:param it: Number of mcmc samples.
+	:param multple: Whether to analyze multiple pulses
 	:param p0: bayesian_blocks parameter
 	:param plot_check:
 	:param lamd_: Background line hardness
@@ -60,7 +63,9 @@ def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,
 	for ij in range(len(startedges)):
 		index_w = np.where((t_c>=startedges[ij])&(t_c<=stopedges[ij]))[0]
 		w[index_w] = 0
-	
+	if multple == False:
+		startedges = startedges[:1]
+		stopedges = stopedges[-1:]
 	c_rate = result['lc'][1]
 	sigma = result['bkg'][1]
 	re_rate = result['re_hist'][0]
@@ -268,7 +273,7 @@ def accumulate_counts(t,n,n_err,w,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.
 							pp = pp + 1
 
 			if pp > 0:
-				print(nnn,end = '\r')
+				print(nnn,'\r')
 				bs_list.append(bs11)
 				nnn = nnn + 1
 
