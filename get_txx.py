@@ -5,7 +5,7 @@ from .Bayesian_duration import *
 from .Baseline import TD_baseline,WhittakerSmooth
 
 def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,txx = 0.9,
-            it = 300,multple = True,
+            it = 300,multple = True,events = False,
             p0 = 0.05,plot_check = None,hardnss=100.):
 	'''
 	
@@ -16,7 +16,8 @@ def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,
 	:param time_edges: time_edges = [time_start,time_stop] ,time_start>=t.min time_stop <=t.max
 	:param txx: if you want to estimate T90 ,txx = 0.9.
 	:param it: Number of mcmc samples.
-	:param multple: Whether to analyze multiple pulses
+	:param multple: Whether to analyze multiple pulses'
+	:param events: False.
 	:param p0: bayesian_blocks parameter
 	:param plot_check:
 	:param lamd_: Background line hardness
@@ -35,15 +36,19 @@ def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,
 		t = t[t_index]
 		bins = np.arange(t_start,t_stop,binsize)
 	bin_n,bin_edges = np.histogram(t,bins = bins)
+	nn_index = np.where(bin_n>0)[0]
+	nn_bin_n = bin_n[nn_index]
 	rate = bin_n/binsize
 	t_c = (bin_edges[1:]+bin_edges[:-1])*0.5
+	nn_t_c = t_c[nn_index]
 	t_c,cs_rate,bs_rate = TD_baseline(t_c,rate)
 	rate_sm = cs_rate+bs_rate.mean()
+	
 	#bin_n_sm = np.round(rate_sm*binsize)
-	if binsize<0.064:
+	if events:
 		if len(t)>40000:
 			print('the size of t is ',len(t))
-			print('binsize < 0.064, so will execute the following command:')
+			print(" 'events' parameter is True, so will execute the following command:")
 			print("bayesian_blocks(t,fitness='events',p0 = p0)")
 			print('but the size of t is over 40000, longer computation times may be required.')
 		edges = bayesian_blocks(t,fitness='events',p0 = p0)
@@ -54,7 +59,7 @@ def get_txx(t,binsize = 0.064,background_degree = 7,sigma = 5,time_edges = None,
 		edges = gg*binsize
 		print('min size :',sizes.min())
 	else:
-		edges = bayesian_blocks(t_c,bin_n,fitness='events',p0=p0)
+		edges = bayesian_blocks(nn_t_c,nn_bin_n,fitness='events',p0=p0)
 	result = background_correction(t_c,rate_sm,edges,degree = background_degree,plot_save=plot_check)
 	startedges,stopedges = get_bayesian_duration(result,sigma = sigma)
 	
